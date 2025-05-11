@@ -6,7 +6,8 @@
 ### Make sure to create a `.env` file with following variables -
 
 ```
-DATABASE_URL=
+DATABASE_URL="postgresql://myuser:mypassword@localhost:5432/mydatabase"
+
 
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
 CLERK_SECRET_KEY=

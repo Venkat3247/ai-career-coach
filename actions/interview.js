@@ -22,14 +22,12 @@ export async function generateQuiz() {
   if (!user) throw new Error("User not found");
 
   const prompt = `
-    Generate 10 technical interview questions for a ${
-      user.industry
-    } professional${
+    Generate 10 technical interview questions for a ${user.industry} professional$${
     user.skills?.length ? ` with expertise in ${user.skills.join(", ")}` : ""
   }.
-    
+
     Each question should be multiple choice with 4 options.
-    
+
     Return the response in this JSON format only, no additional text:
     {
       "questions": [
@@ -48,9 +46,15 @@ export async function generateQuiz() {
     const response = result.response;
     const text = response.text();
     const cleanedText = text.replace(/```(?:json)?\n?/g, "").trim();
-    const quiz = JSON.parse(cleanedText);
 
-    return quiz.questions;
+    try {
+      const quiz = JSON.parse(cleanedText);
+      return quiz.questions;
+    } catch (jsonError) {
+      console.error("\u274C JSON parsing failed:", jsonError);
+      console.error("\u274C Invalid JSON content:\n", cleanedText);
+      throw new Error("Invalid JSON format from AI response");
+    }
   } catch (error) {
     console.error("Error generating quiz:", error);
     throw new Error("Failed to generate quiz questions");
@@ -75,10 +79,8 @@ export async function saveQuizResult(questions, answers, score) {
     explanation: q.explanation,
   }));
 
-  // Get wrong answers
   const wrongAnswers = questionResults.filter((q) => !q.isCorrect);
 
-  // Only generate improvement tips if there are wrong answers
   let improvementTip = null;
   if (wrongAnswers.length > 0) {
     const wrongQuestionsText = wrongAnswers
@@ -101,12 +103,9 @@ export async function saveQuizResult(questions, answers, score) {
 
     try {
       const tipResult = await model.generateContent(improvementPrompt);
-
       improvementTip = tipResult.response.text().trim();
-      console.log(improvementTip);
     } catch (error) {
       console.error("Error generating improvement tip:", error);
-      // Continue without improvement tip if generation fails
     }
   }
 
